@@ -43,7 +43,7 @@ async def select_box_by_number(message: types.Message, state: FSMContext):
     else:
         await message.answer('<b>Ящик с таким номером не найден.</b>\n'
                              'Показать все доступные ящики /all_box')
-    logging.info(f' {message.from_user.id}: {message.from_user.full_name}')
+    logging.info(f'/box_{box_id} {message.from_user.id}: {message.from_user.full_name}')
 
 
 @dp.message_handler(commands="add_box", user_id=admins, state=[None, 'edit'])
