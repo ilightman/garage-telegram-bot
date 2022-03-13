@@ -51,7 +51,7 @@ async def select_box_by_number(message: types.Message, state: FSMContext):
 async def qr_gen(message: types.Message, state: FSMContext):
     await message.answer("Введи имя нового ящика:", reply_markup=cancel_kb)
     await state.set_state('qr_gen_1')
-    logging.info(f' {message.from_user.id}: {message.from_user.full_name}')
+    logging.info(f'{message.from_user.id}:{message.from_user.full_name}')
 
 
 @dp.message_handler(state='qr_gen_1', user_id=admins)
@@ -60,7 +60,7 @@ async def qr_gen_1(message: types.Message, state: FSMContext):
     if box_name.startswith('/'):
         await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
         await state.set_state('qr_gen_1')
-        logging.info(f' failed: {message.from_user.id}: {message.from_user.full_name}')
+        logging.info(f'failed:wrong name:{message.from_user.id}:{message.from_user.full_name}')
     elif box_name:
         try:
             box_id = db.create_box(box_name)
@@ -72,7 +72,7 @@ async def qr_gen_1(message: types.Message, state: FSMContext):
         except sqlite3.IntegrityError:
             await message.answer("Уже есть ящик с таким именем, давай еще раз")
             await state.set_state('qr_gen_1')
-        logging.info(f' success: {message.from_user.id}: {message.from_user.full_name}')
+        logging.info(f'successfuly generated qr for {box_id=}:{message.from_user.id}:{message.from_user.full_name}')
 
 
 @dp.message_handler(state='edit_from_menu', user_id=admins)
@@ -146,7 +146,8 @@ async def cb_query(cb: types.CallbackQuery, state: FSMContext):
             await state.finish()
     if cb.data == 'cancel':
         await state.finish()
-    logging.info(f' {cb.data}: state-{n_state}: {cb.message.from_user.id}: {cb.message.from_user.full_name}')
+    logging.info(
+        f'{cb.data=}:{n_state=}:{box_id if box_id else ""}:{cb.message.from_user.id}:{cb.message.from_user.full_name}')
 
 
 @dp.message_handler(state="add_contents", user_id=admins)
@@ -158,7 +159,7 @@ async def add_contents(message: types.Message, state: FSMContext):
     contents = db.select_all_contents(box_id, list_view=True)
     await message.answer(f"Теперь в ящике {box_id}:\n {contents}", reply_markup=menu_kb)
     await state.set_state('edit')
-    logging.info(f' {message.from_user.id}: {message.from_user.full_name}')
+    logging.info(f'{message.from_user.id}:{message.from_user.full_name}')
 
 
 @dp.message_handler(state=["edit_item"], user_id=admins)

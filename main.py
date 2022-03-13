@@ -7,7 +7,7 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 from db_api import DB
 
-logging.basicConfig(format='%(asctime)s:%(funcName)s:%(message)s', level=logging.INFO)
+logging.basicConfig(filename="app.log", format='%(asctime)s:%(funcName)s:%(message)s', level=logging.INFO)
 bot = Bot(token=getenv("BOT_TOKEN"), parse_mode=types.ParseMode.HTML)
 dp = Dispatcher(bot, storage=MemoryStorage())
 db = DB('db.sqlite')

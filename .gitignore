@@ -221,6 +221,5 @@ cython_debug/
 
 db.sqlite
 .db_backup/*
-qr_15.png
 db.sqlite
 *.sqlite
