@@ -31,7 +31,6 @@ def inl_kb_generator(box_id: str,
         inl_kb = InlineKeyboardMarkup(row_width=2)
         inl_kb.add(InlineKeyboardButton(text='Да', callback_data=cb_kb.new(box_id=box_id, action='confirm')),
                    InlineKeyboardButton(text='Назад', callback_data=cb_kb.new(box_id=box_id, action='back')))
-        # inl_kb.add(InlineKeyboardButton(text='Назад', callback_data=cb_kb.new(box_id=box_id, action='back')))
     return inl_kb
 
 
@@ -52,7 +51,10 @@ def edit_contents_inl(box_id: str, cb_data_prefix: str) -> InlineKeyboardMarkup:
     contents = db.select_all_contents(box_id)
     contents_kb = InlineKeyboardMarkup(row_width=1)
     for item in contents:
-        contents_kb.add(InlineKeyboardButton(text=item[1], callback_data=f"{cb_data_prefix}{item[2]}"))
+        contents_kb.add(InlineKeyboardButton(text=item[1],
+                                             callback_data=cb_kb.new(
+                                                 box_id=box_id,
+                                                 action=f"{cb_data_prefix}{item[2]}")))
     contents_kb.add(InlineKeyboardButton(text='Назад', callback_data=cb_kb.new(box_id=box_id, action='back')))
     return contents_kb
 
@@ -74,3 +76,9 @@ async def qr_code_create(box_id: str) -> io.BytesIO:
     qr_img.save(qr_in_io)
     qr_in_io.seek(0)
     return qr_in_io
+
+
+def boxes_list(boxes_tuple: tuple = ()) -> str:
+    box_list = boxes_tuple if boxes_tuple else db.get_all_box()
+    boxes = '\n'.join(f'{box[0]}: {box[1]}: {box[2]} /box_{box[0]}' for box in box_list)
+    return f"id : Имя : Место\n\n{boxes if boxes else 'Нет ящиков.'}\n\nДобавить новую /add_box"

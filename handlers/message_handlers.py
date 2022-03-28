@@ -4,8 +4,8 @@ import logging
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 
-from main import dp, db, admins, bot
-from misc import inl_kb_generator, qr_code_create, qrcode_response, box_from_db, cancel_inl_kb
+from main import dp, db, admins
+from misc import inl_kb_generator, qr_code_create, qrcode_response, box_from_db, cancel_inl_kb, boxes_list
 
 
 @dp.message_handler(commands=['start', 'help'], user_id=admins)
@@ -20,16 +20,11 @@ async def start_help(message: types.Message):
 @dp.message_handler(commands='all_box', user_id=admins)
 async def all_box(message: types.Message):
     """Отображение всех ящиков с названием и расположением"""
-    boxes = db.get_all_box()
-    places = '\n'.join(f'{box[1]}: {box[2]} /box_{box[0]}' for box in boxes)
-    await message.answer(f"Всего ящиков: {len(boxes)}\n"
-                         f"id : Имя : Место\n\n"
-                         f"{places}\n\n"
-                         f"Добавить новую /add_box")
+    await message.answer(boxes_list())
     logging.info(f'{message.from_user.id}:{message.from_user.full_name}')
 
 
-@dp.message_handler(regexp=r'(^(\d+)$)|(^/box_(\d+)$)', user_id=admins)
+@dp.message_handler(regexp=r'(^(\d{1,2})$)|(^/box_(\d+)$)', user_id=admins)
 async def select_box_by_number(message: types.Message):
     """Отображение ящика по команде /box_номерящика или номерящика"""
     box_id = message.text[5:] if message.text.startswith('/box_') else message.text
@@ -62,7 +57,7 @@ async def qr_gen_1(message: types.Message, state: FSMContext):
         if box_id:
             qr_code = await qr_code_create(box_id)
             await message.answer_photo(photo=qr_code)
-            await message.answer(f"{box_name}", reply_markup=inl_kb_generator(box_id, menu_only=True))
+            await message.answer(box_from_db(box_id), reply_markup=inl_kb_generator(box_id, menu_only=True))
             await state.finish()
             logging.info(f'success_gen_qr:{box_id}:{message.from_user.id}:{message.from_user.full_name}')
         else:
@@ -101,19 +96,20 @@ async def edit_content_item(message: types.Message, state: FSMContext):
 @dp.message_handler(state="upd_place", user_id=admins)
 async def update_name_place(message: types.Message, state: FSMContext):
     n_state = await state.get_state()
-    if message.text.startswith('/'):
-        await message.delete()
+    message_text = message.text
+    await message.delete()
+    if message_text.startswith('/'):
         await state.set_state('upd_name' if n_state == 'upd_name' else 'upd_place')
         logging.error(f'failed:{message.from_user.id}:{message.from_user.full_name}')
     else:
         box_id = await state.get_data('box_id')
         box_id = box_id.get('box_id')
-        print(box_id, n_state)
         if n_state == "upd_name":
-            db.update_name_or_place(box_id, message.text, name=True)
+            db.update_name_or_place(box_id, message_text, name=True)
         if n_state == "upd_place":
-            db.update_name_or_place(box_id, message.text, place=True)
-        await message.answer(box_from_db(box_id), reply_markup=inl_kb_generator(box_id, menu_only=True))
+            db.update_name_or_place(box_id, message_text, place=True)
+        await message.answer(f"Новое имя: {message_text}\n\n" + box_from_db(box_id),
+                             reply_markup=inl_kb_generator(box_id, menu_only=True))
         await state.finish()
         logging.info(f'success:{message.from_user.id}:{message.from_user.full_name}')
 
@@ -123,8 +119,7 @@ async def search(message: types.Message):
     """Поиск по содержимому ящиков при любом состоянии"""
     response = db.search_in_box(message.text)
     if response:
-        boxes = '\n'.join(f'{box[1]}: {box[2]} /box_{box[0]}' for box in response)
-        await message.answer(f"Найдено в:\n{boxes}")
+        await message.answer(f"<b>Найдено в:</b>\n\n{boxes_list(response)}")
     else:
         await message.answer("Не найдено")
     logging.info(f'{message.from_user.id}:{message.from_user.full_name}:{message.text}')
