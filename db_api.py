@@ -10,14 +10,19 @@ class DB:
     def create_db(self):
         try:
             sql = """CREATE TABLE IF NOT EXISTS boxes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             box_name TEXT UNIQUE,
             place TEXT
             );"""
             sql2 = """CREATE TABLE IF NOT EXISTS contents (
                         id INTEGER,
                         contents TEXT,
-                        content_id INTEGER PRIMARY KEY AUTOINCREMENT
+                        content_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        
+                        CONSTRAINT fk_boxes
+                            FOREIGN KEY (id)
+                            REFERENCES boxes(id)
+                            ON DELETE CASCADE
                         );"""
             with sqlite3.connect(self.name) as conn:
                 cur = conn.cursor()
@@ -114,65 +119,60 @@ class DB:
         except sqlite3.Error as error:
             logging.error(f"Error while selecting all contents {box_id=}", error)
 
-
-def add_contents_by_box_id(self, box_id, values: list):
-    try:
-        with sqlite3.connect(self.name) as conn:
-            cur = conn.cursor()
-            for value in values:
-                if len(value) >= 2:
-                    cur.execute("INSERT INTO contents (id, contents) VALUES (?, ?)",
-                                (box_id, value))
-                else:
-                    continue
-            cur.close()
-    except sqlite3.Error as error:
-        logging.error(f"Error while adding contents by {box_id=}", error)
-
-
-def delete_contents(self, content_id):
-    try:
-        with sqlite3.connect(self.name) as conn:
-            cur = conn.cursor()
-            cur.execute("DELETE FROM contents WHERE content_id=?", (content_id,))
-            cur.close()
-    except sqlite3.Error as error:
-        logging.error(f"Error while deleting contents by {content_id}", error)
-
-
-def update_name_or_place(self, box_id, value, name: bool = False, place: bool = False):  # , contents:bool = False
-    sql = "UPDATE boxes SET "
-    try:
-        with sqlite3.connect(self.name) as conn:
-            cur = conn.cursor()
-            if name:
-                cur.execute(sql + "box_name = ? WHERE id = ? ;", (value, box_id))
-            elif place:
-                cur.execute(sql + "place = ? WHERE id = ? ;", (value, box_id))
-            cur.close()
-        box = self.select_box(box_id)
-        return box
-    except sqlite3.Error as error:
-        logging.error(f"Error while updating {name if name else place if place else ''}contents by {box_id}", error)
-
-
-def search_in_box(self, item):
-    try:
-        sql = 'SELECT * FROM contents WHERE contents LIKE ? '
-        if len(item) < 3:
-            return []
-        else:
+    def add_contents_by_box_id(self, box_id, values: list):
+        try:
             with sqlite3.connect(self.name) as conn:
                 cur = conn.cursor()
-                cur.execute(sql, ('%' + item.lower() + '%',))
-                contents = cur.fetchall()
-                if contents:
-                    boxes_id = set(item[0] for item in contents)
-                    sql2 = '(' + ','.join('?' * len(boxes_id)) + ')'
-                    sql = f"SELECT * FROM boxes WHERE id IN "  # {tuple(boxes_id)}
-                    cur.execute(sql + sql2, tuple(boxes_id))
-                    boxes = cur.fetchall()
-                    cur.close()
-                    return boxes
-    except sqlite3.Error as error:
-        logging.error(f"Error while searching {item=}", error)
+                for value in values:
+                    if len(value) >= 2:
+                        cur.execute("INSERT INTO contents (id, contents) VALUES (?, ?)",
+                                    (box_id, value))
+                    else:
+                        continue
+                cur.close()
+        except sqlite3.Error as error:
+            logging.error(f"Error while adding contents by {box_id=}", error)
+
+    def delete_contents(self, content_id):
+        try:
+            with sqlite3.connect(self.name) as conn:
+                cur = conn.cursor()
+                cur.execute("DELETE FROM contents WHERE content_id=?", (content_id,))
+                cur.close()
+        except sqlite3.Error as error:
+            logging.error(f"Error while deleting contents by {content_id}", error)
+
+    def update_name_or_place(self, box_id, value, name: bool = False, place: bool = False):  # , contents:bool = False
+        sql = "UPDATE boxes SET "
+        try:
+            with sqlite3.connect(self.name) as conn:
+                cur = conn.cursor()
+                if name:
+                    cur.execute(sql + "box_name = ? WHERE id = ? ;", (value, box_id))
+                elif place:
+                    cur.execute(sql + "place = ? WHERE id = ? ;", (value, box_id))
+                cur.close()
+            return self.select_box(box_id)
+        except sqlite3.Error as error:
+            logging.error(f"Error while updating {name if name else place if place else ''}contents by {box_id}", error)
+
+    def search_in_box(self, item):
+        try:
+            sql = 'SELECT * FROM contents WHERE contents LIKE ? '
+            if len(item) < 3:
+                return []
+            else:
+                with sqlite3.connect(self.name) as conn:
+                    cur = conn.cursor()
+                    cur.execute(sql, ('%' + item.lower() + '%',))
+                    contents = cur.fetchall()
+                    if contents:
+                        boxes_id = set(item[0] for item in contents)
+                        sql2 = '(' + ','.join('?' * len(boxes_id)) + ')'
+                        sql = f"SELECT * FROM boxes WHERE id IN "  # {tuple(boxes_id)}
+                        cur.execute(sql + sql2, tuple(boxes_id))
+                        boxes = cur.fetchall()
+                        cur.close()
+                        return boxes
+        except sqlite3.Error as error:
+            logging.error(f"Error while searching {item=}", error)
