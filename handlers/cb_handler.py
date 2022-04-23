@@ -7,6 +7,9 @@ from main import dp, db, admins
 from misc import cb_kb, inl_kb_generator, edit_contents_inl, qr_code_create, box_from_db, boxes_list
 
 
+# TODO доделать если при запросе QR кода не удается изменить содержимое или удалить ящик
+
+
 @dp.callback_query_handler(cb_kb.filter(), text_contains='edit_', user_id=admins)
 async def edit_cb(cb: types.CallbackQuery, callback_data: dict, state: FSMContext):
     await cb.answer()
