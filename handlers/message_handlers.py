@@ -20,7 +20,7 @@ async def start_help(message: types.Message):
 @dp.message_handler(commands='all_box', user_id=admins)
 async def all_box(message: types.Message):
     """Отображение всех ящиков с названием и расположением"""
-    await message.answer(boxes_list())
+    await message.answer(await boxes_list())
     logging.info(f'{message.from_user.id}:{message.from_user.full_name}')
 
 
@@ -28,7 +28,7 @@ async def all_box(message: types.Message):
 async def select_box_by_number(message: types.Message):
     """Отображение ящика по команде /box_номерящика или номерящика"""
     box_id = message.text[5:] if message.text.startswith('/box_') else message.text
-    msg = box_from_db(box_id)
+    msg = await box_from_db(box_id)
     if msg:
         await message.answer(msg, reply_markup=inl_kb_generator(box_id, menu_only=True))
         logging.info(f'/box_{box_id}:{message.from_user.id}:{message.from_user.full_name}')
@@ -57,7 +57,7 @@ async def qr_gen_1(message: types.Message, state: FSMContext):
         if box_id:
             qr_code = await qr_code_create(box_id)
             await message.answer_photo(photo=qr_code)
-            await message.answer(box_from_db(box_id), reply_markup=inl_kb_generator(box_id, menu_only=True))
+            await message.answer(await box_from_db(box_id), reply_markup=inl_kb_generator(box_id, menu_only=True))
             await state.finish()
             logging.info(f'success_gen_qr:{box_id}:{message.from_user.id}:{message.from_user.full_name}')
         else:
@@ -71,7 +71,7 @@ async def add_contents(message: types.Message, state: FSMContext):
     data = await state.get_data()
     box_id = data.get('box_id')
     db.add_contents_by_box_id(box_id, contents_to_add)
-    await message.answer(box_from_db(box_id), reply_markup=inl_kb_generator(box_id, menu_only=True))
+    await message.answer(await box_from_db(box_id), reply_markup=inl_kb_generator(box_id, menu_only=True))
     await state.finish()
     logging.info(f'{message.from_user.id}:{message.from_user.full_name}')
 
@@ -87,7 +87,7 @@ async def edit_content_item(message: types.Message, state: FSMContext):
     else:
         value = message.text
         box_id = db.update_content_by_content_id(content_id, value)
-        await message.answer(box_from_db(box_id), reply_markup=inl_kb_generator(box_id, menu_only=True))
+        await message.answer(await box_from_db(box_id), reply_markup=inl_kb_generator(box_id, menu_only=True))
         await state.finish()
         logging.info(f'success:{message.from_user.id}:{message.from_user.full_name}')
 
@@ -108,7 +108,7 @@ async def update_name_place(message: types.Message, state: FSMContext):
             db.update_name_or_place(box_id, message_text, name=True)
         if n_state == "upd_place":
             db.update_name_or_place(box_id, message_text, place=True)
-        await message.answer(f"Новое имя: {message_text}\n\n" + box_from_db(box_id),
+        await message.answer(f"Новое имя: {message_text}\n\n" + await box_from_db(box_id),
                              reply_markup=inl_kb_generator(box_id, menu_only=True))
         await state.finish()
         logging.info(f'success:{message.from_user.id}:{message.from_user.full_name}')
@@ -119,7 +119,7 @@ async def search(message: types.Message):
     """Поиск по содержимому ящиков при любом состоянии"""
     response = db.search_in_box(message.text)
     if response:
-        await message.answer(f"<b>Найдено в:</b>\n\n{boxes_list(response)}")
+        await message.answer(f"<b>Найдено в:</b>\n\n{await boxes_list(response)}")
     else:
         await message.answer("Не найдено")
     logging.info(f'{message.from_user.id}:{message.from_user.full_name}:{message.text}')
@@ -132,7 +132,7 @@ async def qr_response(message: types.Message):
         await message.photo[-1].download(destination_file=file_in_io)
         file_in_io.seek(0)
         box_id = await qrcode_response(file_in_io)
-    msg = box_from_db(box_id)
+    msg = await box_from_db(box_id)
     if msg:
         await message.answer(msg, reply_markup=inl_kb_generator(box_id, menu_only=True))
         logging.info(f'{message.from_user.id}:{message.from_user.full_name}')

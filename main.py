@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 
 from db_api import DB
 
-# filename="app.log",
 logging.basicConfig(filename="app.log", format='%(asctime)s:%(funcName)s:%(message)s', level=logging.INFO)
 
 # os.environ["BOT_TOKEN"] = ""  # your telegram bot token
