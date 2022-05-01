@@ -7,16 +7,13 @@ from main import dp, db, admins
 from misc import cb_kb, inl_kb_generator, edit_contents_inl, qr_code_create, box_from_db, boxes_list
 
 
-# TODO доделать если при запросе QR кода не удается изменить содержимое или удалить ящик
-
-
 @dp.callback_query_handler(cb_kb.filter(), text_contains='edit_', user_id=admins)
 async def edit_cb(cb: types.CallbackQuery, callback_data: dict, state: FSMContext):
     await cb.answer()
     box_id, action = callback_data.get('box_id'), callback_data.get('action')
     if action == 'edit_contents':
         await cb.message.delete()
-        await cb.message.answer(await box_from_db(box_id) + "\n\nЧто добавить (через зяпятую)?",
+        await cb.message.answer(await box_from_db(box_id) + "\n\nЧто добавить (через запятую)?",
                                 reply_markup=inl_kb_generator(box_id))
         await state.update_data(box_id=box_id)
         await state.set_state("add_contents")
@@ -42,7 +39,7 @@ async def edit_cb(cb: types.CallbackQuery, callback_data: dict, state: FSMContex
 
 
 @dp.callback_query_handler(cb_kb.filter(), text_contains='delete_', user_id=admins)
-async def delete_cb_handler(cb: types.CallbackQuery, callback_data: dict, state: FSMContext):
+async def delete_cb_handler(cb: types.CallbackQuery, callback_data: dict):
     await cb.answer()
     box_id, action = callback_data.get('box_id'), callback_data.get('action')
     if action == 'delete_contents':
@@ -68,13 +65,13 @@ async def cb_query(cb: types.CallbackQuery, callback_data: dict, state: FSMConte
     elif action == 'qr_code':
         await cb.message.delete()
         qr_code = await qr_code_create(box_id)
-        await cb.message.answer_photo(photo=qr_code, caption=await box_from_db(box_id),
-                                      reply_markup=inl_kb_generator(box_id, box_menu=True))
+        await cb.message.answer_photo(photo=qr_code, caption=f"Ящик № {box_id}")
+        await cb.message.answer(await box_from_db(box_id), reply_markup=inl_kb_generator(box_id, menu_only=True))
     elif action == 'back':
         await cb.message.edit_reply_markup(reply_markup=inl_kb_generator(box_id, box_menu=True))
     elif action == 'confirm':
         db.delete_box(box_id)
-        await cb.message.edit_text(f"Ящик № {box_id} удален.\n\n" + boxes_list())
+        await cb.message.edit_text(f"Ящик № {box_id} удален.\n\n" + await boxes_list())
         await state.finish()
     elif action == 'cancel':
         await cb.message.delete()

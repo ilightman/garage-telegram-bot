@@ -26,6 +26,7 @@ async def admin_notify(disp: Dispatcher, key: str):
         await disp.bot.send_message(admins[0],
                                     f'{datetime.now().strftime("%d.%m.%Y-%H:%M:%S")} '
                                     f'{"Бот запущен и готов к работе" if key == "on" else "Бот выключается"}')
+        print(f'{"Бот запущен и готов к работе" if key == "on" else "Бот выключается"}')
     except Exception as err:
         logging.exception(err)
 
