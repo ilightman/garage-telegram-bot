@@ -34,7 +34,7 @@ def inl_kb_generator(box_id: str,
     return inl_kb
 
 
-def box_from_db(box_id):
+async def box_from_db(box_id):
     box = db.select_box(box_id)
     if box:
         contents = db.select_all_contents(box_id=box_id, list_view=True)
@@ -46,7 +46,7 @@ def box_from_db(box_id):
         return ''
 
 
-def edit_contents_inl(box_id: str, cb_data_prefix: str) -> InlineKeyboardMarkup:
+async def edit_contents_inl(box_id: str, cb_data_prefix: str) -> InlineKeyboardMarkup:
     """Генерирует inline клавиатуру с кнопками-содержимое ящика"""
     contents = db.select_all_contents(box_id)
     contents_kb = InlineKeyboardMarkup(row_width=1)
@@ -78,7 +78,7 @@ async def qr_code_create(box_id: str) -> io.BytesIO:
     return qr_in_io
 
 
-def boxes_list(boxes_tuple: tuple = ()) -> str:
+async def boxes_list(boxes_tuple: tuple = ()) -> str:
     box_list = boxes_tuple if boxes_tuple else db.get_all_box()
     boxes = '\n'.join(f'{box[0]}: {box[1]}: {box[2]} /box_{box[0]}' for box in box_list)
     return f"id : Имя : Место\n\n{boxes if boxes else 'Нет ящиков.'}\n\nДобавить новую /add_box"
