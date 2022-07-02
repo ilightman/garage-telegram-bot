@@ -221,5 +221,4 @@ cython_debug/
 
 db.sqlite
 .db_backup/*
-db.sqlite
 *.sqlite
